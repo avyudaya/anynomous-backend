@@ -1,3 +1,4 @@
+const { resolve } = require('path');
 const User = require('../models/user.model');
 const generateToken = require('../utils/generateToken');
 
@@ -46,8 +47,35 @@ const registerUser = async (req, res) => {
     }
 }
 
-const loginUser = (req, res) => {
-    res.send('hello');
+// @desc    Auth user and get token
+// @route   POST /api/users/login
+// @access  Public
+const loginUser = async (req, res) => {
+    const {email, password} = req.body;
+    if(email === undefined) {
+        res.status(400).send({message: 'Enter email.'});
+        return;
+    }
+    if(password === undefined) {
+        res.status(400).send({message: 'Enter password.'});
+        return;
+    }
+
+    const user = await User.findOne({ email });
+
+    if(user && (await user.matchPassword(password))){
+        generateToken(res, user._id);
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+        });
+    } else {
+        res.status(401).send({message: 'Invalid email or password'});
+        return;
+    }
+
 }
 
 const logoutUser = (req, res) => {
