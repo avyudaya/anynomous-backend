@@ -1,18 +1,33 @@
 const express = require('express');
 const userRoutes = require('./routes/userRoutes.js');
 const dotenv = require('dotenv');
-dotenv.config();
+const morgan = require('morgan');
+const cors = require('cors');
+const swaggerDocs = require('./swagger.js');
 const connectDB = require('./config/db');
 
-connectDB();
+dotenv.config();
+const app = express();
+
+app.use(express.json());
+app.use(cors());
+app.use(morgan('tiny'));
+app.disable('x-powered-by');
 
 const port = process.env.PORT || 5000;
-const app = express();
-app.use(express.json());
 
-app.get('/', (req, res) => {
-    res.send('Hello World');
-})
 app.use('/api/users', userRoutes);
 
-app.listen(port, () => console.log(`Server started on port ${port}`));
+connectDB().then(() => {
+    try{
+        app.listen(port, () => {
+            console.log(`listening on https://localhost:${port}`);
+        });
+        swaggerDocs(app);
+    } catch(error) {
+        console.log('Cannot create the server.');
+    }
+})
+.catch(err => {
+    console.log('Invalid database connection.');
+})
